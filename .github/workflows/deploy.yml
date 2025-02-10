@@ -22,8 +22,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t docker.io/${{ secrets.DOCKERHUB_USERNAME }}/build_test:latest -f Dockerfile .
-          docker push docker.io/${{ secrets.DOCKERHUB_USERNAME }}/build_test:latest
+          docker build -t docker.io/${{ secrets.DOCKERHUB_USERNAME }}/rscms:latest -f Dockerfile .
+          docker push docker.io/${{ secrets.DOCKERHUB_USERNAME }}/rscms:latest
 
   deploy:
     name: Deploy to Server
