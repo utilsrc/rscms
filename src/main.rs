@@ -2,7 +2,7 @@ use std::env;
 
 use crate::route::auth::auth_routes;
 use crate::route::index::general_routes;
-use actix_web::{App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use dotenv::dotenv;
 
 #[path = "./handler/mod.rs"]
@@ -20,8 +20,20 @@ async fn main() -> std::io::Result<()> {
     }
     println!("MongoDB URL: {}", mongo_url.unwrap());
 
-    let app = move || App::new().configure(general_routes).configure(auth_routes);
-    HttpServer::new(app).bind(("127.0.0.1", 8080))?.run().await
+    let app = move || {
+        App::new()
+            .configure(general_routes)
+            .configure(auth_routes)
+            .default_service(
+                web::route().to(|| async { HttpResponse::NotFound().body("404 Not Found") }),
+            )
+    };
+    HttpServer::new(app)
+        .shutdown_timeout(120)
+        .bind(("0.0.0.0", 8080))
+        .expect("Can not bind to port 8080")
+        .run()
+        .await
 }
 
 #[cfg(test)]
