@@ -1,17 +1,18 @@
-# Use root/example as user/password credentials
 services:
 
-  mongo:
+  mongodb:
     image: mongo
+    container_name: mongodb
     restart: always
     volumes:
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./db/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
 
   mongo-express:
     image: mongo-express
+    container_name: mongo-express
     restart: always
     ports:
       - 8081:8081
@@ -20,3 +21,13 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
       ME_CONFIG_BASICAUTH: false
+
+  app:
+    build: .
+    container_name: app
+    ports:
+      - "80:8080"
+    restart: always
+    stop_grace_period: 120s
+    environment:
+      RSCMS_MONGODB_URL: mongodb://root:example@mongo:27017/
