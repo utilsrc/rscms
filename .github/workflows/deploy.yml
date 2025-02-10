@@ -40,6 +40,6 @@ jobs:
           port: 22
           script: |
             cd /data/wwwroot/rscms
-            docker pull docker.io/${{ secrets.DOCKERHUB_USERNAME }}/build_test:latest
+            docker pull docker.io/${{ secrets.DOCKERHUB_USERNAME }}/rscms:latest
             docker compose down
             docker compose up -d
