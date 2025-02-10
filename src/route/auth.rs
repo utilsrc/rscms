@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handler::auth::login;
+use crate::handler::auth::{login, logout};
 
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
