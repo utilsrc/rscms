@@ -4,6 +4,7 @@ use crate::route::auth::auth_routes;
 use crate::route::index::general_routes;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use dotenv::dotenv;
+use mongodb::{options::ClientOptions, Client};
 
 #[path = "./handler/mod.rs"]
 mod handler;
@@ -17,16 +18,28 @@ async fn main() -> std::io::Result<()> {
     let host = env::var("RSCMS_SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = env::var("RSCMS_SERVER_PORT").unwrap_or_else(|_| "8080".to_string());
     let port_num = port.parse::<u16>().expect("Invalid port number");
-    let mongo_url = env::var("RSCMS_MONGODB_URL");
-    if mongo_url.is_err() {
+    let mongo_uri = env::var("RSCMS_MONGODB_URI");
+    if mongo_uri.is_err() {
         panic!("MongoDB URL not set!");
     }
-    println!("MongoDB URL: {}", mongo_url.unwrap());
+
+    // 连接 MongoDB 数据库
+    let mongo_uri_str = mongo_uri.unwrap();
+    let client_options = ClientOptions::parse(&mongo_uri_str)
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let client = Client::with_options(client_options)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let db = client.database("rscms");
+
+    // 共享 MongoDB 数据库实例
+    let db_instance = web::Data::new(db);
 
     let app = move || {
         App::new()
             .configure(general_routes)
             .configure(auth_routes)
+            .app_data(db_instance.clone())
             .default_service(
                 web::route().to(|| async { HttpResponse::NotFound().body("404 Not Found") }),
             )
@@ -38,8 +51,7 @@ async fn main() -> std::io::Result<()> {
 
     println!("Server running at http://{}:{}/", host, port);
 
-    server.run()
-        .await
+    server.run().await
 }
 
 #[cfg(test)]
