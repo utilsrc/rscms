@@ -14,6 +14,9 @@ mod route;
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
+    let host = env::var("RSCMS_SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let port = env::var("RSCMS_SERVER_PORT").unwrap_or_else(|_| "8080".to_string());
+    let port_num = port.parse::<u16>().expect("Invalid port number");
     let mongo_url = env::var("RSCMS_MONGODB_URL");
     if mongo_url.is_err() {
         panic!("MongoDB URL not set!");
@@ -28,11 +31,14 @@ async fn main() -> std::io::Result<()> {
                 web::route().to(|| async { HttpResponse::NotFound().body("404 Not Found") }),
             )
     };
-    HttpServer::new(app)
+    let server = HttpServer::new(app)
         .shutdown_timeout(120)
-        .bind(("0.0.0.0", 8080))
-        .expect("Can not bind to port 8080")
-        .run()
+        .bind((host.as_str(), port_num))
+        .expect(&format!("Can not bind to port {}:{}", host, port));
+
+    println!("Server running at http://{}:{}/", host, port);
+
+    server.run()
         .await
 }
 
