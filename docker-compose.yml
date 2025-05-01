@@ -4,7 +4,7 @@ services:
     container_name: mongodb
     restart: always
     volumes:
-      - ./scripts/mongodb-docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./scripts/mongodb-docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d/:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "${MONGO_PORT}:27017"
