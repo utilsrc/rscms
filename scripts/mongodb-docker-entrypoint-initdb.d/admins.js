@@ -3,15 +3,15 @@ db = db.getSiblingDB('admin');
 db.auth('root', 'example');
 
 // 创建应用数据库
-db = db.getSiblingDB('myapp');
+db = db.getSiblingDB('rscms');
 
 // 创建应用专用用户
 db.createUser({
-    user: 'appuser',
-    pwd: 'apppassword',
+    user: 'rscms',
+    pwd: 'rscms',
     roles: [
-        { role: 'readWrite', db: 'myapp' },
-        { role: 'dbAdmin', db: 'myapp' }
+        { role: 'readWrite', db: 'rscms' },
+        { role: 'dbAdmin', db: 'rscms' }
     ]
 });
 

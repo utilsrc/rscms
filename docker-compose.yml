@@ -6,6 +6,7 @@ services:
     volumes:
       - ./scripts/mongodb-docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d/:ro
       - /etc/localtime:/etc/localtime:ro
+      - ./mongo_data:/data/db
     ports:
       - "${MONGO_PORT}:27017"
     environment:

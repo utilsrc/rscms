@@ -4,3 +4,4 @@
 .zed
 .env
 !.gitignore
+./mongo_data
