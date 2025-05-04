@@ -1,10 +1,9 @@
-// 初始化数据库和用户
+// 切换到 admin 数据库并认证
 db = db.getSiblingDB('admin');
 db.auth('root', 'example');
 
-// 创建应用数据库
+// 认证后创建应用专用数据库
 db = db.getSiblingDB('rscms');
-
 // 创建应用专用用户
 db.createUser({
     user: 'rscms',
@@ -21,6 +20,5 @@ db.users.insertMany([
     { name: 'Alice', email: 'alice@example.com', createdAt: new Date() },
     { name: 'Bob', email: 'bob@example.com', createdAt: new Date() }
 ]);
-
 // 创建索引
 db.users.createIndex({ email: 1 }, { unique: true });
