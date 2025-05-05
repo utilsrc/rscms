@@ -17,8 +17,7 @@ db.createUser({
 // 初始化集合和数据
 db.createCollection('users');
 db.users.insertMany([
-    { name: 'Alice', email: 'alice@example.com', createdAt: new Date() },
-    { name: 'Bob', email: 'bob@example.com', createdAt: new Date() }
+    { name: 'Alice', email: 'alice@example.com', created_at: new Date() }
 ]);
 // 创建索引
 db.users.createIndex({ email: 1 }, { unique: true });

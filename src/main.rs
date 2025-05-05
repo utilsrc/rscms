@@ -2,6 +2,7 @@ use std::env;
 
 use crate::route::auth::auth_routes;
 use crate::route::index::general_routes;
+use crate::state::AppState;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use dotenv::dotenv;
 use mongodb::{bson::doc, Client};
@@ -10,6 +11,8 @@ use mongodb::{bson::doc, Client};
 mod handler;
 #[path = "./route/mod.rs"]
 mod route;
+mod state;
+mod model;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -31,9 +34,7 @@ async fn main() -> std::io::Result<()> {
     let db_name = db_name.unwrap();
 
     // 连接 MongoDB 数据库
-    let client = Client::with_uri_str(mongo_uri)
-        .await
-        .unwrap();
+    let client = Client::with_uri_str(mongo_uri).await.unwrap();
     let database = client.database(db_name.as_str());
     match database.run_command(doc! {"ping": 1}).await {
         Ok(_) => println!("✅ Successfully connected to MongoDB database: {}", db_name),
@@ -41,17 +42,17 @@ async fn main() -> std::io::Result<()> {
     }
 
     // 共享 MongoDB 数据库实例
-    let db_instance = web::Data::new(database);
+    let shared_data = web::Data::new(AppState { mongo_db: database });
     let app = move || {
         App::new()
             .configure(general_routes)
             .configure(auth_routes)
-            .app_data(db_instance.clone())
+            .app_data(shared_data.clone())
             .default_service(
                 web::route().to(|| async { HttpResponse::NotFound().body("404 Not Found") }),
             )
     };
-    
+
     // 启动服务器
     let server = HttpServer::new(app)
         .shutdown_timeout(120)
