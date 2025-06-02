@@ -1,11 +1,12 @@
 use actix_web::web;
 
-use crate::handler::auth::{login, logout};
+use crate::handler::auth::{login, logout, register};
 
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")
-            .route("/login", web::get().to(login)) // correct route: post /auth/token
-            .route("/logout", web::get().to(logout)), // correct route: delete /auth/token
+            .route("/register", web::post().to(register))
+            .route("/token", web::post().to(login))
+            .route("/token", web::delete().to(logout)),
     );
 }
