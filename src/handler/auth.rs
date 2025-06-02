@@ -13,7 +13,7 @@ use serde_json::json;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    sub: String,  // user email
+    sub: String,  // user id (ObjectId as hex string)
     exp: usize,   // expiry timestamp
 }
 
@@ -24,7 +24,7 @@ pub async fn login(
     let users: Collection<User> = app_state.mongo_db.collection("users");
     
     // 查找用户
-    let user = match users.find_one(doc! {"email": &form.email}).await {
+    let user = match users.find_one(doc! {"email": &form.email}, None).await {
         Ok(Some(user)) => user,
         Ok(None) => return Json(ApiResult::error("用户不存在")),
         Err(e) => return Json(ApiResult::error(e.to_string())),
@@ -38,7 +38,7 @@ pub async fn login(
     // 生成JWT令牌
     let exp = (Utc::now() + chrono::Duration::hours(24)).timestamp() as usize;
     let claims = Claims {
-        sub: user.email.clone(),
+        sub: user.id.unwrap().to_hex(),
         exp,
     };
 
@@ -70,7 +70,7 @@ pub async fn register(
     let users: Collection<User> = app_state.mongo_db.collection("users");
     
     // 检查用户是否已存在
-    if let Ok(Some(_)) = users.find_one(doc! {"email": &form.email}).await {
+    if let Ok(Some(_)) = users.find_one(doc! {"email": &form.email}, None).await {
         return Json(ApiResult::error("用户已存在"));
     }
 
@@ -87,7 +87,7 @@ pub async fn register(
         updated_at: now,
     };
 
-    match users.insert_one(user).await {
+    match users.insert_one(user, None).await {
         Ok(_) => Json(ApiResult::success(json!({"message": "注册成功"}))),
         Err(e) => Json(ApiResult::error(e.to_string())),
     }

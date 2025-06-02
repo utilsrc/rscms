@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 pub mod auth;
+pub mod app;
 
 #[derive(Serialize)]
 pub struct ApiResult<T: Serialize> {

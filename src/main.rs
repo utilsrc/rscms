@@ -2,6 +2,7 @@ use std::env;
 
 use crate::route::auth::auth_routes;
 use crate::route::index::general_routes;
+use crate::route::app::routes as app_routes;
 use crate::state::AppState;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use dotenv::dotenv;
@@ -36,7 +37,7 @@ async fn main() -> std::io::Result<()> {
     // 连接 MongoDB 数据库
     let client = Client::with_uri_str(mongo_uri).await.unwrap();
     let database = client.database(db_name.as_str());
-    match database.run_command(doc! {"ping": 1}).await {
+    match database.run_command(doc! {"ping": 1}, None).await {
         Ok(_) => println!("✅ Successfully connected to MongoDB database: {}", db_name),
         Err(e) => panic!("❌ Failed to connect to MongoDB database: {}", e),
     }
@@ -47,6 +48,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .configure(general_routes)
             .configure(auth_routes)
+            .configure(app_routes)
             .app_data(shared_data.clone())
             .default_service(
                 web::route().to(|| async { HttpResponse::NotFound().body("404 Not Found") }),
