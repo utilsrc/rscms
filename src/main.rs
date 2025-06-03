@@ -14,6 +14,7 @@ mod handler;
 mod route;
 mod state;
 mod model;
+mod middleware;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -42,13 +43,25 @@ async fn main() -> std::io::Result<()> {
         Err(e) => panic!("❌ Failed to connect to MongoDB database: {}", e),
     }
 
+    // 读取JWT密钥
+    let jwt_secret = env::var("RSCMS_JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+
     // 共享 MongoDB 数据库实例
-    let shared_data = web::Data::new(AppState { mongo_db: database });
+    let shared_data = web::Data::new(AppState { 
+        mongo_db: database,
+        jwt_secret,
+    });
     let app = move || {
         App::new()
+            // 不需要认证的路由
             .configure(general_routes)
             .configure(auth_routes)
-            .configure(app_routes)
+            // 需要认证的路由
+            .service(
+                web::scope("")
+                    .wrap(crate::middleware::auth::AuthMiddleware)
+                    .configure(app_routes)
+            )
             .app_data(shared_data.clone())
             .default_service(
                 web::route().to(|| async { HttpResponse::NotFound().body("404 Not Found") }),

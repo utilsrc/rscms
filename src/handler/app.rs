@@ -1,14 +1,7 @@
-use crate::{model::app::{App, CreateAppRequest, UpdateAppRequest}, state::AppState};
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use crate::{model::app::{App, CreateAppRequest, UpdateAppRequest}, state::AppState, middleware::auth::Claims};
+use actix_web::{web, HttpResponse, Responder};
+use serde::Deserialize;
 use mongodb::bson::{doc, oid::ObjectId, DateTime};
-use jsonwebtoken::{decode, DecodingKey, Validation};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String,  // user id
-    exp: usize,   // expiry timestamp
-}
 
 #[derive(Debug, Deserialize)]
 pub struct ListAppsQuery {
@@ -16,30 +9,14 @@ pub struct ListAppsQuery {
     pub page_size: Option<u64>,
 }
 
-fn get_user_id_from_token(req: &HttpRequest) -> Result<ObjectId, String> {
-    let token = req.headers()
-        .get("Authorization")
-        .and_then(|h| h.to_str().ok())
-        .and_then(|s| s.strip_prefix("Bearer "))
-        .ok_or("Missing or invalid Authorization header")?;
-
-    let claims = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret("secret".as_ref()),
-        &Validation::default()
-    ).map_err(|e| e.to_string())?;
-
-    ObjectId::parse_str(&claims.claims.sub).map_err(|e| e.to_string())
-}
-
 pub async fn create_app(
     state: web::Data<AppState>,
-    req: HttpRequest,
+    claims: Claims,
     payload: web::Json<CreateAppRequest>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_token(&req) {
+    let user_id = match ObjectId::parse_str(&claims.sub) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(e),
+        Err(e) => return HttpResponse::Unauthorized().json(e.to_string()),
     };
     let app = App {
         id: None,
@@ -65,12 +42,12 @@ pub async fn create_app(
 
 pub async fn list_apps(
     state: web::Data<AppState>,
-    req: HttpRequest,
+    claims: Claims,
     query: web::Query<ListAppsQuery>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_token(&req) {
+    let user_id = match ObjectId::parse_str(&claims.sub) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(e),
+        Err(e) => return HttpResponse::Unauthorized().json(e.to_string()),
     };
     let page = query.page.unwrap_or(1);
     let page_size = query.page_size.unwrap_or(10);
@@ -99,12 +76,12 @@ pub async fn list_apps(
 
 pub async fn get_app(
     state: web::Data<AppState>,
-    req: HttpRequest,
+    claims: Claims,
     app_id: web::Path<ObjectId>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_token(&req) {
+    let user_id = match ObjectId::parse_str(&claims.sub) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(e),
+        Err(e) => return HttpResponse::Unauthorized().json(e.to_string()),
     };
     let collection = state.mongo_db.collection::<App>("apps");
     match collection.find_one(doc! {"_id": app_id.into_inner(), "owner_id": user_id}, None).await {
@@ -116,13 +93,13 @@ pub async fn get_app(
 
 pub async fn update_app(
     state: web::Data<AppState>,
-    req: HttpRequest,
+    claims: Claims,
     app_id: web::Path<ObjectId>,
     payload: web::Json<UpdateAppRequest>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_token(&req) {
+    let user_id = match ObjectId::parse_str(&claims.sub) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(e),
+        Err(e) => return HttpResponse::Unauthorized().json(e.to_string()),
     };
     let collection = state.mongo_db.collection::<App>("apps");
     let filter = doc! {"_id": app_id.into_inner(), "owner_id": user_id};
@@ -148,12 +125,12 @@ pub async fn update_app(
 
 pub async fn delete_app(
     state: web::Data<AppState>,
-    req: HttpRequest,
+    claims: Claims,
     app_id: web::Path<ObjectId>,
 ) -> impl Responder {
-    let user_id = match get_user_id_from_token(&req) {
+    let user_id = match ObjectId::parse_str(&claims.sub) {
         Ok(id) => id,
-        Err(e) => return HttpResponse::Unauthorized().json(e),
+        Err(e) => return HttpResponse::Unauthorized().json(e.to_string()),
     };
     let collection = state.mongo_db.collection::<App>("apps");
     let filter = doc! {"_id": app_id.into_inner(), "owner_id": user_id};

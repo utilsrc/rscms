@@ -1,6 +1,5 @@
 use crate::handler::app;
 use actix_web::web;
-use mongodb::bson::oid::ObjectId;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
     cfg.service(

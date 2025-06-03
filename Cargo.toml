@@ -12,3 +12,4 @@ dotenv = "0.15.0"
 mongodb = "2.6.1"
 chrono = { version = "0.4", features = ["serde"] }
 jsonwebtoken = "8.0"
+futures = "0.3"
