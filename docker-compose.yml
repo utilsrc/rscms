@@ -1,38 +1,40 @@
 services:
-
   mongodb:
     image: mongo
     container_name: mongodb
     restart: always
     volumes:
-      - ./db/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./scripts/mongodb-docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d/:ro
       - /etc/localtime:/etc/localtime:ro
+      - ./mongo_data:/data/db
+    ports:
+      - "${MONGO_PORT}:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
 
   mongo-express:
     image: mongo-express
     container_name: mongo-express
     restart: always
     ports:
-      - 8081:8081
+      - "${MONGO_EXPRESS_PORT}:8081"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
       ME_CONFIG_BASICAUTH: false
 
-  app:
-    build: .
-    container_name: app
-    ports:
-      - "80:8080"
-    restart: always
-    stop_grace_period: 120s
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-    environment:
-      RSCMS_MONGODB_URL: mongodb://root:example@mongo:27017/
+#  app:
+#    build: .
+#    container_name: app
+#    ports:
+#      - "${APP_PORT}:${APP_CONTAINER_PORT}"
+#    restart: always
+#    stop_grace_period: 120s
+#    volumes:
+#      - /etc/localtime:/etc/localtime:ro
+#    environment:
+#      RSCMS_MONGODB_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
