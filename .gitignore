@@ -1,5 +1,7 @@
 /target
 .vscode
 .idea
+.zed
 .env
-/db/temp_data/*
+!.gitignore
+/mongo_data/
